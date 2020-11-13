@@ -89,7 +89,7 @@ Upset_deployment(){
 }
 
 Init(){
-echo && echo -e " 心悦_K8S 管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
+echo && echo -e " K8S 管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
 ————————————————————————
 
 ******请先备份deployment
