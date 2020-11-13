@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
+
+export PATH
+
+#=================================================
+#	System Required: CentOS
+#	Description: deployment scale
+#	Author: Ocean
+#=================================================
+sh_ver="0.1"
+
+Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
+Info="${Green_font_prefix}[信息]${Font_color_suffix}"
+Error="${Red_font_prefix}[错误]${Font_color_suffix}"
+Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
+NamespaceList=(default test1)
+LABEL="podstatus=maintenance"
+
+
+Backup_deployment(){
+	echo -e "****************************"
+	echo  -e "正在备份deployment中......"
+	for Namespace  in ${NamespaceList[@]};
+	do
+	kubectl -n $Namespace get  deployments.apps  -l=$LABEL| grep -v NAME | awk '{print $1"\t"$3}' > $Namespace
+	done
+        echo -e "备份结束"
+	echo -e "****************************"
+
+
+	echo && echo -e " 请输入正确的数字：
+————————
+ ${Green_font_prefix} 1.${Font_color_suffix} 返回 主菜单
+ ${Green_font_prefix} 2.${Font_color_suffix} 退出 脚本
+————————"
+        read -e -p "(默认: 取消):" set_num
+        [[ -z "${set_num}" ]] && echo "已取消..." && exit 1
+        if [[ ${set_num} == "1" ]]; then
+                Init
+        elif [[ ${set_num} == "2" ]]; then
+                exit 1
+	fi
+
+}
+
+Narrow_deployment(){
+	echo -e "开始自动缩容deployment"
+	for Namespace in ${NamespaceList[@]}
+        do
+	kubectl  scale deployment  -l $LABEL --replicas=0 -n $Namespace
+        done
+        echo -e "已结束自动缩容deployment"
+        echo && echo -e " 请输入正确的数字：
+————————
+ ${Green_font_prefix} 1.${Font_color_suffix} 返回 主菜单
+ ${Green_font_prefix} 2.${Font_color_suffix} 退出 脚本
+————————"
+        read -e -p "(默认: 取消):" set_num
+        [[ -z "${set_num}" ]] && echo "已取消..." && exit 1
+        if [[ ${set_num} == "1" ]]; then
+                Init
+        elif [[ ${set_num} == "2" ]]; then
+                exit 1
+	fi
+
+}
+
+Upset_deployment(){
+	echo -e "开始自动扩容deployment"
+        for Namespace in ${NamespaceList[@]}
+        do
+	cat $Namespace | awk -v namespace=$Namespace '{system("kubectl -n "namespace" scale deployment "$1" --replicas="$2)}'
+	done
+        echo -e "已结束自动扩容deployment"
+        echo && echo -e " 请输入正确的数字：
+————————
+ ${Green_font_prefix} 1.${Font_color_suffix} 返回 主菜单
+ ${Green_font_prefix} 2.${Font_color_suffix} 退出 脚本
+————————"
+        read -e -p "(默认: 取消):" set_num
+        [[ -z "${set_num}" ]] && echo "已取消..." && exit 1
+        if [[ ${set_num} == "1" ]]; then
+                Init
+        elif [[ ${set_num} == "2" ]]; then
+                exit 1
+	fi
+
+}
+
+Init(){
+echo && echo -e " 心悦_K8S 管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
+————————————————————————
+
+******请先备份deployment
+
+————————————————————————
+
+ ${Green_font_prefix}1.${Font_color_suffix} 备份 Scale_deployment
+ ${Green_font_prefix}2.${Font_color_suffix} 缩容 Narrow_deployment
+ ${Green_font_prefix}3.${Font_color_suffix} 恢复 Upset_deployment
+————————————" && echo
+echo
+read -e -p " 请输入数字 [1-3]:" num
+case "$num" in
+        1)
+	Backup_deployment        
+        ;;
+        2)
+       	Narrow_deployment
+        ;;
+        3)
+        Upset_deployment
+        ;;
+        *)
+        echo "请输入正确数字 [1-3]"
+        ;;
+esac
+}
+
+Init
+
